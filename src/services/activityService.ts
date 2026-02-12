@@ -18,7 +18,17 @@ const addActivity = (
         startTime: startTime,
     }
     activities.push(newActivity)
-}
+};
+
+const getActivitiesByDay = (date: Date): Activity[] =>{
+    const activitiesOnDay: Activity[] =  []
+    for (const activity of activities){
+        if (activity.startTime.toDateString() === date.toDateString() ){
+            activitiesOnDay.push(activity)
+        }
+    }
+    return activitiesOnDay
+};
 
 //addActivity();
 //getActivitiesByDay();
