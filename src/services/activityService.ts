@@ -1,8 +1,12 @@
 import { Activity } from "../models";
 import { randomUUID } from "crypto";
 import { compareAsc } from "date-fns";
+import dbData from "../../db.json";
 
-let activities: Activity[] = [];
+let activities: Activity[] = dbData.trips[0].activities.map(activity => ({
+    ...activity,
+    startTime: new Date(activity.startTime)
+}));
 
 const addActivity = (
     name: string, 
