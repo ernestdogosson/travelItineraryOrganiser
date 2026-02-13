@@ -11,7 +11,7 @@ const addActivity = (
     startTime: Date 
 ): void => {
 
-    const newActivity = {
+    const newActivity: Activity = {
         id: randomUUID(),
         name: name,
         cost: cost,
@@ -20,6 +20,8 @@ const addActivity = (
     }
     activities.push(newActivity)
 };
+
+
 
 const getActivitiesByDay = (date: Date): Activity[] =>{
     const activitiesOnDay: Activity[] =  []
@@ -41,19 +43,18 @@ const getActivitiesByCategory = (category: "food" | "transport" | "sightseeing")
     return filteredActivities;
 };
 
-const getActivitiesChronologically = () =>{
-    const activitiesChronologically: Activity[] =  []
-    const dateOne = new Date("2026-05-05T10:45:00")
-    const dateTwo = new Date("2026-05-01T10:45:00")
-    const difference = dateOne.getTime() - dateTwo.getTime();
-    console.log(dateOne.getTime());
-    for (const activity of activities){
-        if (activity.startTime === Date ){
-            activitiesChronologically.push(activity)
-        }
-    }
-    return activitiesChronologically;
+const getActivitiesChronologically = (): Activity[] =>{
+    return [...activities].sort((a, b ) =>{
+        return compareAsc((a.startTime), (b.startTime))
+    });
 };
+
+addActivity("Museum", 150, "sightseeing", new Date("2026-02-15T22:00"))
+console.log(getActivitiesChronologically());
+
+
+
+
 //addActivity();
 //getActivitiesByDay();
 //getActivitiesByCategory();
