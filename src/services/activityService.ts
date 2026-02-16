@@ -65,4 +65,4 @@ console.log(getActivitiesByCategory("transport"));
 //addActivity();
 //getActivitiesByDay();
 //getActivitiesByCategory();
-//getAllCategoriesChronologically *
+//getAllCategoriesChronologically(); *
