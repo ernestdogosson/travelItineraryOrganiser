@@ -7,6 +7,7 @@ import {
 } from "./services/activityService";
 import { getTripTotalCost, findHighCostItem } from "./services/budgetManager";
 import { getDestinationInfo } from "./services/destinationService";
+import { addTrip } from "./services/tripService";
 
 // shows all activities sorted by time
 const handleViewActivities = () => {
@@ -122,6 +123,25 @@ const handleAddActivity = async () => {
   console.log(`\nActivity "${answers.name}" added!`);
 };
 
+// prompts for trip details and creates a new trip
+const handleCreateTrip = async () => {
+  const answers = await inquirer.prompt([
+    {
+      type: "input",
+      name: "destination",
+      message: "Destination (country/city):",
+    },
+    {
+      type: "input",
+      name: "startDate",
+      message: "Start date (YYYY-MM-DD):",
+    },
+  ]);
+
+  const tripId = await addTrip(answers.destination, new Date(answers.startDate));
+  console.log(`\nTrip to "${answers.destination}" created! (${tripId})`);
+};
+
 // gets the total cost of the trip from the budget service
 const handleTripCost = async () => {
   const total = await getTripTotalCost("trip_001");
@@ -186,6 +206,8 @@ const main = async () => {
         message: "What would you like to do?",
         loop: false,
         choices: [
+          { name: "Create a new trip", value: "createtrip" },
+          new inquirer.Separator("--- Activities ---"),
           { name: "View activities (chronological)", value: "view" },
           { name: "Filter activities", value: "filter" },
           { name: "Add a new activity", value: "add" },
@@ -202,6 +224,9 @@ const main = async () => {
 
     // each case calls its own handler function to keep things clean
     switch (choice) {
+      case "createtrip":
+        await handleCreateTrip();
+        break;
       case "view":
         handleViewActivities();
         break;
