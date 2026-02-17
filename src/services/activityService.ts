@@ -47,6 +47,18 @@ export const addActivity = async (
     await fs.writeFile("./db.json", JSON.stringify(db, null, 2));
 };
 
+export const deleteActivity = async (tripId: string, activityId: string): Promise<void> => {
+    const db = await readDataBase();
+    const trip = db.trips.find(t => t.id === tripId);
+
+    if (!trip) {
+        throw new Error(`Trip ${tripId} not found`);
+    }
+
+    trip.activities = trip.activities.filter(a => a.id !== activityId);
+    await fs.writeFile("./db.json", JSON.stringify(db, null, 2));
+};
+
 export const getActivitiesByDay = async (tripId: string, date: Date): Promise<Activity[]> => {
     const activities = await getActivitiesForTrip(tripId);
     const activitiesOnDay: Activity[] = []
