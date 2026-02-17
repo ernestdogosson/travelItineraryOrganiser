@@ -6,6 +6,7 @@ import {
   addActivity,
 } from "./services/activityService";
 import { getTripTotalCost, findHighCostItem } from "./services/budgetManager";
+import { getDestinationInfo } from "./services/destinationService";
 
 // shows all activities sorted by time
 const handleViewActivities = () => {
@@ -148,6 +149,28 @@ const handleHighCost = async () => {
   }
 };
 
+// asks for a country name and fetches info from the API
+const handleDestinationInfo = async () => {
+  const { country } = await inquirer.prompt([
+    {
+      type: "input",
+      name: "country",
+      message: 'Enter country name or "back" to return:',
+    },
+  ]);
+
+  if (country.toLowerCase() === "back") return;
+
+  try {
+    const info = await getDestinationInfo(country);
+    console.log(`\n--- Destination Info: ${country} ---`);
+    console.log(`Currency: ${info.currency}`);
+    console.log(`Flag: ${info.flag}`);
+  } catch {
+    console.log("\nCould not fetch destination info. Check the country name and try again.");
+  }
+};
+
 // main function that runs the menu loop
 const main = async () => {
   let running = true;
@@ -169,6 +192,8 @@ const main = async () => {
           new inquirer.Separator("--- Budget ---"),
           { name: "View trip total cost", value: "cost" },
           { name: "Find high-cost activities", value: "highcost" },
+          new inquirer.Separator("--- Info ---"),
+          { name: "Get destination info", value: "destination" },
           new inquirer.Separator(),
           { name: "Exit", value: "exit" },
         ],
@@ -191,6 +216,9 @@ const main = async () => {
         break;
       case "highcost":
         await handleHighCost();
+        break;
+      case "destination":
+        await handleDestinationInfo();
         break;
       case "exit":
         console.log("\nGoodbye!");
