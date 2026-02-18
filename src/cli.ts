@@ -4,10 +4,11 @@ import {
   getActivitiesByCategory,
   getActivitiesByDay,
   addActivity,
+  deleteActivity,
 } from "./services/activityService";
 import { getTripTotalCost, findHighCostItem } from "./services/budgetManager";
 import { getDestinationInfo } from "./services/destinationService";
-import { addTrip, getTrips } from "./services/tripService";
+import { addTrip, deleteTrip, getTrips } from "./services/tripService";
 
 let currentTripId: string | null = null;
 
@@ -142,6 +143,42 @@ const handleAddActivity = async () => {
   console.log(`\nActivity "${answers.name}" added!`);
 };
 
+// shows activities in the current trip and lets the user pick one to delete
+const handleDeleteActivity = async () => {
+  if (!currentTripId) {
+    console.log("\nNo trip selected. Select a trip first!");
+    return;
+  }
+
+  const activities = await getActivitiesChronologically(currentTripId);
+  if (activities.length === 0) {
+    console.log("\nNo activities to delete.");
+    return;
+  }
+
+  const { activityId } = await inquirer.prompt([
+    {
+      type: "list",
+      name: "activityId",
+      message: "Select an activity to delete:",
+      loop: false,
+      choices: [
+        ...activities.map((a) => ({
+          name: `${a.name} | $${a.cost} | ${a.category}`,
+          value: a.id,
+        })),
+        new inquirer.Separator(),
+        { name: "Back", value: "back" },
+      ],
+    },
+  ]);
+
+  if (activityId === "back") return;
+
+  await deleteActivity(currentTripId, activityId);
+  console.log("\nActivity deleted!");
+};
+
 // prompts for trip details and creates a new trip
 const handleCreateTrip = async () => {
   const answers = await inquirer.prompt([
@@ -188,6 +225,59 @@ const handleSelectTrip = async () => {
 
   currentTripId = tripId;
   console.log(`\nNow working with trip: ${tripId}`);
+};
+
+// shows all trips and lets the user pick one to delete
+const handleDeleteTrip = async () => {
+  const trips = await getTrips();
+
+  if (trips.length === 0) {
+    console.log("\nNo trips to delete.");
+    return;
+  }
+
+  const { tripId } = await inquirer.prompt([
+    {
+      type: "list",
+      name: "tripId",
+      message: "Select a trip to delete:",
+      loop: false,
+      choices: [
+        ...trips.map((t) => ({
+          name: `${t.destination} (${t.id})`,
+          value: t.id,
+        })),
+        new inquirer.Separator(),
+        { name: "Back", value: "back" },
+      ],
+    },
+  ]);
+
+  if (tripId === "back") return;
+
+  await deleteTrip(tripId);
+
+  // if we deleted the trip we were working with, clear the selection
+  if (currentTripId === tripId) {
+    currentTripId = null;
+  }
+
+  console.log(`\nTrip ${tripId} deleted!`);
+};
+
+// shows all trips
+const handleViewTrips = async () => {
+  const trips = await getTrips();
+
+  if (trips.length === 0) {
+    console.log("\nNo trips found. Create one first!");
+    return;
+  }
+
+  console.log("\n--- Your Trips ---");
+  trips.forEach((t) => {
+    console.log(`- ${t.destination} (${t.id}) | ${t.activities.length} activities`);
+  });
 };
 
 // gets the total cost of the trip from the budget service
@@ -265,11 +355,14 @@ const main = async () => {
         loop: false,
         choices: [
           { name: "Create a new trip", value: "createtrip" },
+          { name: "View all trips", value: "viewtrips" },
           { name: "Select a trip", value: "selecttrip" },
+          { name: "Delete a trip", value: "deletetrip" },
           new inquirer.Separator("--- Activities ---"),
           { name: "View activities (chronological)", value: "view" },
           { name: "Filter activities", value: "filter" },
           { name: "Add a new activity", value: "add" },
+          { name: "Delete an activity", value: "deleteactivity" },
           new inquirer.Separator("--- Budget ---"),
           { name: "View trip total cost", value: "cost" },
           { name: "Find high-cost activities", value: "highcost" },
@@ -286,8 +379,14 @@ const main = async () => {
       case "createtrip":
         await handleCreateTrip();
         break;
+      case "viewtrips":
+        await handleViewTrips();
+        break;
       case "selecttrip":
         await handleSelectTrip();
+        break;
+      case "deletetrip":
+        await handleDeleteTrip();
         break;
       case "view":
         await handleViewActivities();
@@ -297,6 +396,9 @@ const main = async () => {
         break;
       case "add":
         await handleAddActivity();
+        break;
+      case "deleteactivity":
+        await handleDeleteActivity();
         break;
       case "highcost":
         await handleHighCost();

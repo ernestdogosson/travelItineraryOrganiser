@@ -25,6 +25,12 @@ export const addTrip = async (
     return tripId;
 };
 
+export const deleteTrip = async (tripId: string): Promise<void> => {
+    const db = await readDataBase();
+    db.trips = db.trips.filter(t => t.id !== tripId);
+    await fs.writeFile("./db.json", JSON.stringify(db, null, 2));
+};
+
 export const getTrips = async (): Promise<Trip[]> => {
     const db = await readDataBase();
     return db.trips;
