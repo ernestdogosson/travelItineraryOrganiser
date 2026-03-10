@@ -6,7 +6,7 @@ import { Activity } from "../models";
 export const readDataBase = async (): Promise<{ trips: Trip[] }> => {
   try {
     const response = await fs.readFile("./db.json", "utf-8");
-    const data = JSON.parse(response);
+    const data = JSON.parse(response) as { trips: Trip[] };
     return data;
   } catch (error) {
     console.error(error);
@@ -37,6 +37,7 @@ export const getTripTotalCost = async (tripId: string): Promise<number> => {
 };
 
 // Find high cost activity item
+
 export const findHighCostItem = async (
   tripId: string,
   threshold: number,
@@ -56,7 +57,7 @@ export const findHighCostItem = async (
     return highCostItem;
   } catch (error) {
     console.error(error);
-    throw Error;
+    throw error;
   }
 };
 
@@ -74,5 +75,7 @@ export const highCost = async (tripId: string, threshold: number) => {
         `- ${activity.name}: $${activity.cost} (${activity.category})`,
       );
     });
-  } catch (error) {}
+  } catch (error) {
+    console.error(error);
+  }
 };

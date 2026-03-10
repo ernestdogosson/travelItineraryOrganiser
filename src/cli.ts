@@ -38,7 +38,7 @@ const handleFilterActivities = async () => {
     return;
   }
 
-  const { filterType } = await inquirer.prompt([
+  const { filterType } = await inquirer.prompt<{ filterType: string }>([
     {
       type: "list",
       name: "filterType",
@@ -54,8 +54,10 @@ const handleFilterActivities = async () => {
   ]);
 
   if (filterType === "category") {
-    // Let user pick which category to filter by
-    const { category } = await inquirer.prompt([
+    // let user pick which category to filter by
+    const { category } = await inquirer.prompt<{
+      category: "food" | "transport" | "sightseeing";
+    }>([
       {
         type: "list",
         name: "category",
@@ -75,8 +77,8 @@ const handleFilterActivities = async () => {
       });
     }
   } else if (filterType === "day") {
-    // Ask user for a date, or type "back" to return
-    const { date } = await inquirer.prompt([
+    // ask user for a date, or type "back" to return
+    const { date } = await inquirer.prompt<{ date: string }>([
       {
         type: "input",
         name: "date",
@@ -109,7 +111,12 @@ const handleAddActivity = async () => {
     return;
   }
 
-  const answers = await inquirer.prompt([
+  const answers = await inquirer.prompt<{
+    name: string;
+    cost: number;
+    category: "food" | "transport" | "sightseeing";
+    startTime: string;
+  }>([
     {
       type: "input",
       name: "name",
@@ -156,7 +163,7 @@ const handleDeleteActivity = async () => {
     return;
   }
 
-  const { activityId } = await inquirer.prompt([
+  const { activityId } = await inquirer.prompt<{ activityId: string }>([
     {
       type: "list",
       name: "activityId",
@@ -181,7 +188,10 @@ const handleDeleteActivity = async () => {
 
 // Prompts for trip details and creates a new trip
 const handleCreateTrip = async () => {
-  const answers = await inquirer.prompt([
+  const answers = await inquirer.prompt<{
+    destination: string;
+    startDate: string;
+  }>([
     {
       type: "input",
       name: "destination",
@@ -210,7 +220,7 @@ const handleSelectTrip = async () => {
     return;
   }
 
-  const { tripId } = await inquirer.prompt([
+  const { tripId } = await inquirer.prompt<{ tripId: string }>([
     {
       type: "list",
       name: "tripId",
@@ -236,7 +246,7 @@ const handleDeleteTrip = async () => {
     return;
   }
 
-  const { tripId } = await inquirer.prompt([
+  const { tripId } = await inquirer.prompt<{ tripId: string }>([
     {
       type: "list",
       name: "tripId",
@@ -294,7 +304,7 @@ const handleTripCost = async () => {
 
 // Asks user for a cost threshold and shows activities above it
 const handleHighCost = async () => {
-  const { threshold } = await inquirer.prompt([
+  const { threshold } = await inquirer.prompt<{ threshold: number }>([
     {
       type: "number",
       name: "threshold",
@@ -319,7 +329,7 @@ const handleHighCost = async () => {
 
 // Asks for a country name and fetches info from the API
 const handleDestinationInfo = async () => {
-  const { country } = await inquirer.prompt([
+  const { country } = await inquirer.prompt<{ country: string }>([
     {
       type: "input",
       name: "country",
@@ -348,8 +358,8 @@ const main = async () => {
   while (running) {
     console.log("\n=== Travel Itinerary Manager ===");
 
-    // Show the main menu and wait for user to pick an option
-    const { choice } = await inquirer.prompt([
+    // show the main menu and wait for user to pick an option
+    const { choice } = await inquirer.prompt<{ choice: string }>([
       {
         type: "list",
         name: "choice",
@@ -419,4 +429,4 @@ const main = async () => {
   }
 };
 
-main();
+void main();

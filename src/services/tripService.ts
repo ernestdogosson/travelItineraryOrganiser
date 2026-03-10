@@ -8,7 +8,7 @@ export const addTrip = async (
 ): Promise<string> => {
   const db = await readDataBase();
 
-  // Generate the next trip id based on how many trips exist
+  // generate the next trip id based on how many trips exist
   const nextNumber = db.trips.length + 1;
   const tripId = `trip_${String(nextNumber).padStart(3, "0")}`;
 

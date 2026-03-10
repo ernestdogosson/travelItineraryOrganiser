@@ -5,6 +5,7 @@ export type Activity = {
   category: "food" | "transport" | "sightseeing";
   startTime: Date;
 };
+
 export type Trip = {
   id: string;
   destination: string;
