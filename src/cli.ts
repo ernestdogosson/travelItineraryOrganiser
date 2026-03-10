@@ -4,28 +4,41 @@ import {
   getActivitiesByCategory,
   getActivitiesByDay,
   addActivity,
+  deleteActivity,
 } from "./services/activityService";
 import { getTripTotalCost, findHighCostItem } from "./services/budgetManager";
 import { getDestinationInfo } from "./services/destinationService";
+import { addTrip, deleteTrip, getTrips } from "./services/tripService";
 
-// shows all activities sorted by time
-const handleViewActivities = () => {
-  const activities = getActivitiesChronologically();
+let currentTripId: string | null = null;
+
+// Shows all activities sorted by time
+const handleViewActivities = async () => {
+  if (!currentTripId) {
+    console.log("\nNo trip selected. Select a trip first!");
+    return;
+  }
+  const activities = await getActivitiesChronologically(currentTripId);
   if (activities.length === 0) {
     console.log("\nNo activities found.");
   } else {
     console.log("\n--- Activities (Chronological) ---");
     activities.forEach((a) => {
       console.log(
-        `- ${a.name} | $${a.cost} | ${a.category} | ${a.startTime.toLocaleString()}`
+        `- ${a.name} | $${a.cost} | ${a.category} | ${a.startTime.toLocaleString()}`,
       );
     });
   }
 };
 
-// lets the user pick a filter type and shows matching activities
+// Lets the user pick a filter type and shows matching activities
 const handleFilterActivities = async () => {
-  const { filterType } = await inquirer.prompt([
+  if (!currentTripId) {
+    console.log("\nNo trip selected. Select a trip first!");
+    return;
+  }
+
+  const { filterType } = await inquirer.prompt<{ filterType: string }>([
     {
       type: "list",
       name: "filterType",
@@ -42,7 +55,9 @@ const handleFilterActivities = async () => {
 
   if (filterType === "category") {
     // let user pick which category to filter by
-    const { category } = await inquirer.prompt([
+    const { category } = await inquirer.prompt<{
+      category: "food" | "transport" | "sightseeing";
+    }>([
       {
         type: "list",
         name: "category",
@@ -50,20 +65,20 @@ const handleFilterActivities = async () => {
         choices: ["food", "transport", "sightseeing"],
       },
     ]);
-    const activities = getActivitiesByCategory(category);
+    const activities = await getActivitiesByCategory(currentTripId, category);
     if (activities.length === 0) {
       console.log(`\nNo ${category} activities found.`);
     } else {
       console.log(`\n--- ${category} Activities ---`);
       activities.forEach((a) => {
         console.log(
-          `- ${a.name} | $${a.cost} | ${a.startTime.toLocaleString()}`
+          `- ${a.name} | $${a.cost} | ${a.startTime.toLocaleString()}`,
         );
       });
     }
   } else if (filterType === "day") {
     // ask user for a date, or type "back" to return
-    const { date } = await inquirer.prompt([
+    const { date } = await inquirer.prompt<{ date: string }>([
       {
         type: "input",
         name: "date",
@@ -73,23 +88,35 @@ const handleFilterActivities = async () => {
 
     if (date.toLowerCase() === "back") return;
 
-    const activities = getActivitiesByDay(new Date(date));
+    const activities = await getActivitiesByDay(currentTripId, new Date(date));
     if (activities.length === 0) {
-      console.log(`\nNo activities found for ${date}. Check the date and try again.`);
+      console.log(
+        `\nNo activities found for ${date}. Check the date and try again.`,
+      );
     } else {
       console.log(`\n--- Activities on ${date} ---`);
       activities.forEach((a) => {
         console.log(
-          `- ${a.name} | $${a.cost} | ${a.category} | ${a.startTime.toLocaleString()}`
+          `- ${a.name} | $${a.cost} | ${a.category} | ${a.startTime.toLocaleString()}`,
         );
       });
     }
   }
 };
 
-// prompts for activity details and adds it to the list
+// Prompts for activity details and adds it to the list
 const handleAddActivity = async () => {
-  const answers = await inquirer.prompt([
+  if (!currentTripId) {
+    console.log("\nNo trip selected. Select a trip first!");
+    return;
+  }
+
+  const answers = await inquirer.prompt<{
+    name: string;
+    cost: number;
+    category: "food" | "transport" | "sightseeing";
+    startTime: string;
+  }>([
     {
       type: "input",
       name: "name",
@@ -113,31 +140,182 @@ const handleAddActivity = async () => {
     },
   ]);
 
-  addActivity(
+  await addActivity(
+    currentTripId,
     answers.name,
     answers.cost,
     answers.category,
-    new Date(answers.startTime)
+    new Date(answers.startTime),
   );
   console.log(`\nActivity "${answers.name}" added!`);
 };
 
-// gets the total cost of the trip from the budget service
+// Shows activities in the current trip and lets the user pick one to delete
+const handleDeleteActivity = async () => {
+  if (!currentTripId) {
+    console.log("\nNo trip selected. Select a trip first!");
+    return;
+  }
+
+  const activities = await getActivitiesChronologically(currentTripId);
+  if (activities.length === 0) {
+    console.log("\nNo activities to delete.");
+    return;
+  }
+
+  const { activityId } = await inquirer.prompt<{ activityId: string }>([
+    {
+      type: "list",
+      name: "activityId",
+      message: "Select an activity to delete:",
+      loop: false,
+      choices: [
+        ...activities.map((a) => ({
+          name: `${a.name} | $${a.cost} | ${a.category}`,
+          value: a.id,
+        })),
+        new inquirer.Separator(),
+        { name: "Back", value: "back" },
+      ],
+    },
+  ]);
+
+  if (activityId === "back") return;
+
+  await deleteActivity(currentTripId, activityId);
+  console.log("\nActivity deleted!");
+};
+
+// Prompts for trip details and creates a new trip
+const handleCreateTrip = async () => {
+  const answers = await inquirer.prompt<{
+    destination: string;
+    startDate: string;
+  }>([
+    {
+      type: "input",
+      name: "destination",
+      message: "Destination (country/city):",
+    },
+    {
+      type: "input",
+      name: "startDate",
+      message: "Start date (YYYY-MM-DD):",
+    },
+  ]);
+
+  const tripId = await addTrip(
+    answers.destination,
+    new Date(answers.startDate),
+  );
+  console.log(`\nTrip to "${answers.destination}" created! (${tripId})`);
+};
+
+// Shows all trips and lets the user pick one to work with
+const handleSelectTrip = async () => {
+  const trips = await getTrips();
+
+  if (trips.length === 0) {
+    console.log("\nNo trips found. Create one first!");
+    return;
+  }
+
+  const { tripId } = await inquirer.prompt<{ tripId: string }>([
+    {
+      type: "list",
+      name: "tripId",
+      message: "Select a trip:",
+      loop: false,
+      choices: trips.map((t) => ({
+        name: `${t.destination} (${t.id})`,
+        value: t.id,
+      })),
+    },
+  ]);
+
+  currentTripId = tripId;
+  console.log(`\nNow working with trip: ${tripId}`);
+};
+
+// Shows all trips and lets the user pick one to delete
+const handleDeleteTrip = async () => {
+  const trips = await getTrips();
+
+  if (trips.length === 0) {
+    console.log("\nNo trips to delete.");
+    return;
+  }
+
+  const { tripId } = await inquirer.prompt<{ tripId: string }>([
+    {
+      type: "list",
+      name: "tripId",
+      message: "Select a trip to delete:",
+      loop: false,
+      choices: [
+        ...trips.map((t) => ({
+          name: `${t.destination} (${t.id})`,
+          value: t.id,
+        })),
+        new inquirer.Separator(),
+        { name: "Back", value: "back" },
+      ],
+    },
+  ]);
+
+  if (tripId === "back") return;
+
+  await deleteTrip(tripId);
+
+  // If we deleted the trip we were working with, clear the selection
+  if (currentTripId === tripId) {
+    currentTripId = null;
+  }
+
+  console.log(`\nTrip ${tripId} deleted!`);
+};
+
+// Shows all trips
+const handleViewTrips = async () => {
+  const trips = await getTrips();
+
+  if (trips.length === 0) {
+    console.log("\nNo trips found. Create one first!");
+    return;
+  }
+
+  console.log("\n--- Your Trips ---");
+  trips.forEach((t) => {
+    console.log(
+      `- ${t.destination} (${t.id}) | ${t.activities.length} activities`,
+    );
+  });
+};
+
+// Gets the total cost of the trip from the budget service
 const handleTripCost = async () => {
-  const total = await getTripTotalCost("trip_001");
+  if (!currentTripId) {
+    console.log("\nNo trip selected. Select a trip first!");
+    return;
+  }
+  const total = await getTripTotalCost(currentTripId);
   console.log(`\nTrip total cost: $${total}`);
 };
 
-// asks user for a cost threshold and shows activities above it
+// Asks user for a cost threshold and shows activities above it
 const handleHighCost = async () => {
-  const { threshold } = await inquirer.prompt([
+  const { threshold } = await inquirer.prompt<{ threshold: number }>([
     {
       type: "number",
       name: "threshold",
       message: "Enter cost threshold ($):",
     },
   ]);
-  const items = await findHighCostItem("trip_001", threshold);
+  if (!currentTripId) {
+    console.log("\nNo trip selected. Select a trip first!");
+    return;
+  }
+  const items = await findHighCostItem(currentTripId, threshold);
   if (items.length === 0) {
     console.log(`\nNo activities found above $${threshold}.`);
   } else {
@@ -149,9 +327,9 @@ const handleHighCost = async () => {
   }
 };
 
-// asks for a country name and fetches info from the API
+// Asks for a country name and fetches info from the API
 const handleDestinationInfo = async () => {
-  const { country } = await inquirer.prompt([
+  const { country } = await inquirer.prompt<{ country: string }>([
     {
       type: "input",
       name: "country",
@@ -167,11 +345,13 @@ const handleDestinationInfo = async () => {
     console.log(`Currency: ${info.currency}`);
     console.log(`Flag: ${info.flag}`);
   } catch {
-    console.log("\nCould not fetch destination info. Check the country name and try again.");
+    console.log(
+      "\nCould not fetch destination info. Check the country name and try again.",
+    );
   }
 };
 
-// main function that runs the menu loop
+// Main function that runs the menu loop
 const main = async () => {
   let running = true;
 
@@ -179,16 +359,22 @@ const main = async () => {
     console.log("\n=== Travel Itinerary Manager ===");
 
     // show the main menu and wait for user to pick an option
-    const { choice } = await inquirer.prompt([
+    const { choice } = await inquirer.prompt<{ choice: string }>([
       {
         type: "list",
         name: "choice",
         message: "What would you like to do?",
         loop: false,
         choices: [
+          { name: "Create a new trip", value: "createtrip" },
+          { name: "View all trips", value: "viewtrips" },
+          { name: "Select a trip", value: "selecttrip" },
+          { name: "Delete a trip", value: "deletetrip" },
+          new inquirer.Separator("--- Activities ---"),
           { name: "View activities (chronological)", value: "view" },
           { name: "Filter activities", value: "filter" },
           { name: "Add a new activity", value: "add" },
+          { name: "Delete an activity", value: "deleteactivity" },
           new inquirer.Separator("--- Budget ---"),
           { name: "View trip total cost", value: "cost" },
           { name: "Find high-cost activities", value: "highcost" },
@@ -200,10 +386,22 @@ const main = async () => {
       },
     ]);
 
-    // each case calls its own handler function to keep things clean
+    // Each case calls its own handler function to keep things clean
     switch (choice) {
+      case "createtrip":
+        await handleCreateTrip();
+        break;
+      case "viewtrips":
+        await handleViewTrips();
+        break;
+      case "selecttrip":
+        await handleSelectTrip();
+        break;
+      case "deletetrip":
+        await handleDeleteTrip();
+        break;
       case "view":
-        handleViewActivities();
+        await handleViewActivities();
         break;
       case "filter":
         await handleFilterActivities();
@@ -211,11 +409,14 @@ const main = async () => {
       case "add":
         await handleAddActivity();
         break;
-      case "cost":
-        await handleTripCost();
+      case "deleteactivity":
+        await handleDeleteActivity();
         break;
       case "highcost":
         await handleHighCost();
+        break;
+      case "cost":
+        await handleTripCost();
         break;
       case "destination":
         await handleDestinationInfo();
@@ -228,4 +429,4 @@ const main = async () => {
   }
 };
 
-main();
+void main();

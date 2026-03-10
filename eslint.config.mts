@@ -1,16 +1,24 @@
 import js from "@eslint/js";
 import globals from "globals";
 import tseslint from "typescript-eslint";
-import { defineConfig } from "eslint/config";
 
-export default defineConfig([
+export default tseslint.config(
   {
-    ignores: ["eslint.config.mts", "dist/**", "node_modules/**"],
+    ignores: ["dist/**", "node_modules/**"],
   },
   {
-    files: ["src/**/*.{ts}"],
-    plugins: { js },
-    extends: ["js/recommended"],
+    files: ["*.mts"],
+    extends: [js.configs.recommended],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
+  {
+    files: ["src/**/*.ts"],
+    extends: [
+      js.configs.recommended,
+      ...tseslint.configs.recommendedTypeChecked,
+    ],
     languageOptions: {
       globals: globals.node,
       parserOptions: {
@@ -60,6 +68,5 @@ export default defineConfig([
         },
       ],
     },
-  },
-  ...tseslint.configs.recommendedTypeChecked,
-]);
+  }
+);
