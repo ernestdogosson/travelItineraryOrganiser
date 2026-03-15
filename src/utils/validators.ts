@@ -6,12 +6,6 @@ export const isValidDateString = (input: string): boolean => {
   return isValid(parseISO(input));
 };
 
-// Checks YYYY-MM-DDTHH:mm format strictly
-export const isValidDateTimeString = (input: string): boolean => {
-  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(input)) return false;
-  return isValid(parseISO(input));
-};
-
 // Checks that a number is finite and greater than zero
 export const isPositiveNumber = (value: number | undefined): boolean => {
   if (value === undefined) return false;

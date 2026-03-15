@@ -174,7 +174,7 @@ const handleAddActivity = async () => {
       name: "startHour",
       message: "Start time (HH:mm):",
       validate: (input: string) =>
-        /^\d{2}:\d{2}$/.test(input) || "Enter a valid time (HH:mm)",
+        /^([01]\d|2[0-3]):[0-5]\d$/.test(input) || "Enter a valid time (HH:mm)",
     },
   ]);
 
@@ -195,7 +195,7 @@ const handleAddActivity = async () => {
     activityName,
     parseFloat(answers.cost),
     answers.category,
-    new Date(startTime),
+    parseISO(startTime),
   );
   console.log(`\nActivity "${activityName}" added!`);
 };
@@ -292,7 +292,7 @@ const handleCreateTrip = async () => {
 
   const tripId = await addTrip(
     destination,
-    new Date(answers.startDate),
+    parseISO(answers.startDate),
   );
   console.log(`\nTrip to "${destination}" created! (${tripId})`);
 };
