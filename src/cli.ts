@@ -442,46 +442,54 @@ const main = async () => {
     ]);
 
     // Each case calls its own handler function to keep things clean
-    switch (choice) {
-      case "createtrip":
-        await handleCreateTrip();
-        break;
-      case "viewtrips":
-        await handleViewTrips();
-        break;
-      case "selecttrip":
-        await handleSelectTrip();
-        break;
-      case "deletetrip":
-        await handleDeleteTrip();
-        break;
-      case "view":
-        await handleViewActivities();
-        break;
-      case "filter":
-        await handleFilterActivities();
-        break;
-      case "add":
-        await handleAddActivity();
-        break;
-      case "deleteactivity":
-        await handleDeleteActivity();
-        break;
-      case "highcost":
-        await handleHighCost();
-        break;
-      case "cost":
-        await handleTripCost();
-        break;
-      case "destination":
-        await handleDestinationInfo();
-        break;
-      case "exit":
-        console.log("\nGoodbye!");
-        running = false;
-        break;
+    try {
+      switch (choice) {
+        case "createtrip":
+          await handleCreateTrip();
+          break;
+        case "viewtrips":
+          await handleViewTrips();
+          break;
+        case "selecttrip":
+          await handleSelectTrip();
+          break;
+        case "deletetrip":
+          await handleDeleteTrip();
+          break;
+        case "view":
+          await handleViewActivities();
+          break;
+        case "filter":
+          await handleFilterActivities();
+          break;
+        case "add":
+          await handleAddActivity();
+          break;
+        case "deleteactivity":
+          await handleDeleteActivity();
+          break;
+        case "highcost":
+          await handleHighCost();
+          break;
+        case "cost":
+          await handleTripCost();
+          break;
+        case "destination":
+          await handleDestinationInfo();
+          break;
+        case "exit":
+          console.log("\nGoodbye!");
+          running = false;
+          break;
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.log(`\nSomething went wrong: ${message}`);
     }
   }
 };
 
-void main();
+main().catch((err) => {
+  console.error("Fatal error:", err);
+  process.exit(1);
+});
