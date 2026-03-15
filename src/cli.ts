@@ -353,18 +353,20 @@ const handleTripCost = async () => {
 
 // Asks user for a cost threshold and shows activities above it
 const handleHighCost = async () => {
-  const { threshold } = await inquirer.prompt<{ threshold: number }>([
-    {
-      type: "number",
-      name: "threshold",
-      message: "Enter cost threshold ($):",
-    },
-  ]);
   if (!currentTripId) {
     console.log("\nNo trip selected. Select a trip first!");
     return;
   }
-  const items = await findHighCostItem(currentTripId, threshold);
+  const { threshold } = await inquirer.prompt<{ threshold: string }>([
+    {
+      type: "input",
+      name: "threshold",
+      message: "Enter cost threshold ($):",
+      validate: (input: string) =>
+        isPositiveNumber(parseFloat(input)) || "Threshold must be a positive number",
+    },
+  ]);
+  const items = await findHighCostItem(currentTripId, parseFloat(threshold));
   if (items.length === 0) {
     console.log(`\nNo activities found above $${threshold}.`);
   } else {
