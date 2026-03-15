@@ -24,7 +24,7 @@ export const getTripTotalCost = async (tripId: string): Promise<number> => {
   const trip = db.trips.find((t) => t.id === tripId);
 
   if (!trip) {
-    throw new Error("Trip not found!");
+    throw new Error(`Trip ${tripId} not found`);
   }
 
   return calculateTotalCost(trip);
@@ -39,7 +39,7 @@ export const findHighCostItem = async (
   const trip = db.trips.find((t) => t.id === tripId);
 
   if (!trip) {
-    throw new Error("Trip not found!");
+    throw new Error(`Trip ${tripId} not found`);
   }
 
   return trip.activities.filter((activity) => activity.cost >= threshold);

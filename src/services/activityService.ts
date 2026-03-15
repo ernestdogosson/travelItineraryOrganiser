@@ -90,13 +90,9 @@ export const getActivitiesByDay = async (
   date: Date,
 ): Promise<Activity[]> => {
   const activities = await getActivitiesForTrip(tripId);
-  const activitiesOnDay: Activity[] = [];
-  for (const activity of activities) {
-    if (activity.startTime.toDateString() === date.toDateString()) {
-      activitiesOnDay.push(activity);
-    }
-  }
-  return activitiesOnDay;
+  return activities.filter(
+    (a) => a.startTime.toDateString() === date.toDateString(),
+  );
 };
 
 export const getActivitiesByCategory = async (
@@ -104,13 +100,7 @@ export const getActivitiesByCategory = async (
   category: "food" | "transport" | "sightseeing",
 ): Promise<Activity[]> => {
   const activities = await getActivitiesForTrip(tripId);
-  const filteredActivities: Activity[] = [];
-  for (const activity of activities) {
-    if (activity.category === category) {
-      filteredActivities.push(activity);
-    }
-  }
-  return filteredActivities;
+  return activities.filter((a) => a.category === category);
 };
 
 export const getActivitiesChronologically = async (
