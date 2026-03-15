@@ -1,5 +1,5 @@
 import { Activity } from "../models";
-import { randomUUID } from "crypto";
+import { randomInt } from "crypto";
 import { compareAsc } from "date-fns";
 import fs from "fs/promises";
 import { readDataBase } from "./budgetManager";
@@ -27,7 +27,7 @@ export const addActivity = async (
   startTime: Date,
 ): Promise<void> => {
   const newActivity: Activity = {
-    id: randomUUID(),
+    id: String(randomInt(1000, 9999)),
     name: name,
     cost: cost,
     category: category,
@@ -66,6 +66,22 @@ export const deleteActivity = async (
     await fs.writeFile("./db.json", JSON.stringify(db, null, 2));
   } catch (error) {
     throw new Error(`Failed to delete activity: ${(error as Error).message}`);
+  }
+};
+
+export const deleteAllActivities = async (tripId: string): Promise<void> => {
+  const db = await readDataBase();
+  const trip = db.trips.find((t) => t.id === tripId);
+
+  if (!trip) {
+    throw new Error(`Trip ${tripId} not found`);
+  }
+
+  trip.activities = [];
+  try {
+    await fs.writeFile("./db.json", JSON.stringify(db, null, 2));
+  } catch (error) {
+    throw new Error(`Failed to delete activities: ${(error as Error).message}`);
   }
 };
 

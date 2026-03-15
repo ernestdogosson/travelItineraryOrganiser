@@ -1,4 +1,5 @@
 import fs from "fs/promises";
+import { randomInt } from "crypto";
 import { Trip } from "../models";
 import { readDataBase } from "./budgetManager";
 
@@ -8,9 +9,7 @@ export const addTrip = async (
 ): Promise<string> => {
   const db = await readDataBase();
 
-  // generate the next trip id based on how many trips exist
-  const nextNumber = db.trips.length + 1;
-  const tripId = `trip_${String(nextNumber).padStart(3, "0")}`;
+  const tripId = String(randomInt(1000, 9999));
 
   const newTrip: Trip = {
     id: tripId,
@@ -36,6 +35,16 @@ export const deleteTrip = async (tripId: string): Promise<void> => {
     await fs.writeFile("./db.json", JSON.stringify(db, null, 2));
   } catch (error) {
     throw new Error(`Failed to delete trip: ${(error as Error).message}`);
+  }
+};
+
+export const deleteAllTrips = async (): Promise<void> => {
+  const db = await readDataBase();
+  db.trips = [];
+  try {
+    await fs.writeFile("./db.json", JSON.stringify(db, null, 2));
+  } catch (error) {
+    throw new Error(`Failed to delete all trips: ${(error as Error).message}`);
   }
 };
 

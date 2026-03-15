@@ -1,16 +1,16 @@
 {
   "trips": [
     {
-      "id": "trip_001",
-      "destination": "sweden",
-      "startDate": "2026-02-24T00:00:00.000Z",
+      "id": "5937",
+      "destination": "Nigeria",
+      "startDate": "2026-03-25T00:00:00.000Z",
       "activities": [
         {
-          "id": "ca12e208-8e23-451c-a6a9-5d85237d9bf8",
-          "name": "go to zoo",
-          "cost": 2,
+          "id": "3239",
+          "name": "Visit national art gallery",
+          "cost": 3,
           "category": "sightseeing",
-          "startTime": "2025-03-30T12:00:00.000Z"
+          "startTime": "2026-04-26T09:30:00.000Z"
         }
       ]
     }

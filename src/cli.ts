@@ -6,10 +6,11 @@ import {
   getActivitiesByDay,
   addActivity,
   deleteActivity,
+  deleteAllActivities,
 } from "./services/activityService";
 import { getTripTotalCost, findHighCostItem } from "./services/budgetManager";
 import { getDestinationInfo } from "./services/destinationService";
-import { addTrip, deleteTrip, getTrips } from "./services/tripService";
+import { addTrip, deleteTrip, deleteAllTrips, getTrips } from "./services/tripService";
 import {
   isValidDateString,
   isPositiveNumber,
@@ -121,6 +122,19 @@ const handleAddActivity = async () => {
     return;
   }
 
+  const { confirm } = await inquirer.prompt<{ confirm: string }>([
+    {
+      type: "list",
+      name: "confirm",
+      message: "Add a new activity?",
+      choices: [
+        { name: "Continue", value: "continue" },
+        { name: "Back to menu", value: "back" },
+      ],
+    },
+  ]);
+  if (confirm === "back") return;
+
   const answers = await inquirer.prompt<{
     name: string;
     cost: string;
@@ -173,14 +187,17 @@ const handleAddActivity = async () => {
     return;
   }
 
+  const activityName =
+    answers.name.charAt(0).toUpperCase() + answers.name.slice(1).toLowerCase();
+
   await addActivity(
     currentTripId,
-    answers.name,
+    activityName,
     parseFloat(answers.cost),
     answers.category,
     new Date(startTime),
   );
-  console.log(`\nActivity "${answers.name}" added!`);
+  console.log(`\nActivity "${activityName}" added!`);
 };
 
 // Shows activities in the current trip and lets the user pick one to delete
@@ -221,6 +238,19 @@ const handleDeleteActivity = async () => {
 
 // Prompts for trip details and creates a new trip
 const handleCreateTrip = async () => {
+  const { confirm } = await inquirer.prompt<{ confirm: string }>([
+    {
+      type: "list",
+      name: "confirm",
+      message: "Create a new trip?",
+      choices: [
+        { name: "Continue", value: "continue" },
+        { name: "Back to menu", value: "back" },
+      ],
+    },
+  ]);
+  if (confirm === "back") return;
+
   const answers = await inquirer.prompt<{
     destination: string;
     startDate: string;
@@ -248,9 +278,12 @@ const handleCreateTrip = async () => {
     return;
   }
 
+  const destination =
+    answers.destination.charAt(0).toUpperCase() + answers.destination.slice(1).toLowerCase();
+
   console.log("\nValidating destination...");
   try {
-    await getDestinationInfo(answers.destination);
+    await getDestinationInfo(destination);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     console.log(`\n${message}`);
@@ -258,10 +291,10 @@ const handleCreateTrip = async () => {
   }
 
   const tripId = await addTrip(
-    answers.destination,
+    destination,
     new Date(answers.startDate),
   );
-  console.log(`\nTrip to "${answers.destination}" created! (${tripId})`);
+  console.log(`\nTrip to "${destination}" created! (${tripId})`);
 };
 
 // Shows all trips and lets the user pick one to work with
@@ -345,6 +378,50 @@ const handleViewTrips = async () => {
   });
 };
 
+// Deletes all activities for the current trip
+const handleDeleteAllActivities = async () => {
+  if (!currentTripId) {
+    console.log("\nNo trip selected. Select a trip first!");
+    return;
+  }
+
+  const { confirm } = await inquirer.prompt<{ confirm: string }>([
+    {
+      type: "list",
+      name: "confirm",
+      message: "Delete all activities for this trip?",
+      choices: [
+        { name: "Yes, delete all", value: "yes" },
+        { name: "Cancel", value: "cancel" },
+      ],
+    },
+  ]);
+  if (confirm === "cancel") return;
+
+  await deleteAllActivities(currentTripId);
+  console.log("\nAll activities deleted.");
+};
+
+// Deletes all trips
+const handleDeleteAllTrips = async () => {
+  const { confirm } = await inquirer.prompt<{ confirm: string }>([
+    {
+      type: "list",
+      name: "confirm",
+      message: "Delete ALL trips? This cannot be undone.",
+      choices: [
+        { name: "Yes, delete everything", value: "yes" },
+        { name: "Cancel", value: "cancel" },
+      ],
+    },
+  ]);
+  if (confirm === "cancel") return;
+
+  await deleteAllTrips();
+  currentTripId = null;
+  console.log("\nAll trips deleted.");
+};
+
 // Gets the total cost of the trip from the budget service
 const handleTripCost = async () => {
   if (!currentTripId) {
@@ -425,11 +502,13 @@ const main = async () => {
           { name: "View all trips", value: "viewtrips" },
           { name: "Select a trip", value: "selecttrip" },
           { name: "Delete a trip", value: "deletetrip" },
+          { name: "Delete all trips", value: "deletealltrips" },
           new inquirer.Separator("--- Activities ---"),
           { name: "View activities (chronological)", value: "view" },
           { name: "Filter activities", value: "filter" },
           { name: "Add a new activity", value: "add" },
           { name: "Delete an activity", value: "deleteactivity" },
+          { name: "Delete all activities", value: "deleteallactivities" },
           new inquirer.Separator("--- Budget ---"),
           { name: "View trip total cost", value: "cost" },
           { name: "Find high-cost activities", value: "highcost" },
@@ -456,6 +535,9 @@ const main = async () => {
         case "deletetrip":
           await handleDeleteTrip();
           break;
+        case "deletealltrips":
+          await handleDeleteAllTrips();
+          break;
         case "view":
           await handleViewActivities();
           break;
@@ -467,6 +549,9 @@ const main = async () => {
           break;
         case "deleteactivity":
           await handleDeleteActivity();
+          break;
+        case "deleteallactivities":
+          await handleDeleteAllActivities();
           break;
         case "highcost":
           await handleHighCost();
@@ -483,6 +568,7 @@ const main = async () => {
           break;
       }
     } catch (err: unknown) {
+      if (err instanceof Error && err.name === "ExitPromptError") return;
       const message = err instanceof Error ? err.message : String(err);
       console.log(`\nSomething went wrong: ${message}`);
     }
