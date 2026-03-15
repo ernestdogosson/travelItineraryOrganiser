@@ -10,7 +10,11 @@ import {
 import { getTripTotalCost, findHighCostItem } from "./services/budgetManager";
 import { getDestinationInfo } from "./services/destinationService";
 import { addTrip, deleteTrip, getTrips } from "./services/tripService";
-import { isValidDateString, isNonEmptyString } from "./utils/validators";
+import {
+  isValidDateString,
+  isPositiveNumber,
+  isNonEmptyString,
+} from "./utils/validators";
 
 let currentTripId: string | null = null;
 
@@ -115,19 +119,24 @@ const handleAddActivity = async () => {
 
   const answers = await inquirer.prompt<{
     name: string;
-    cost: number;
+    cost: string;
     category: "food" | "transport" | "sightseeing";
-    startTime: string;
+    startDate: string;
+    startHour: string;
   }>([
     {
       type: "input",
       name: "name",
       message: "Activity name:",
+      validate: (input: string) =>
+        isNonEmptyString(input) || "Activity name cannot be empty",
     },
     {
-      type: "number",
+      type: "input",
       name: "cost",
       message: "Cost ($):",
+      validate: (input: string) =>
+        isPositiveNumber(parseFloat(input)) || "Cost must be a positive number",
     },
     {
       type: "list",
@@ -137,17 +146,35 @@ const handleAddActivity = async () => {
     },
     {
       type: "input",
-      name: "startTime",
-      message: "Start time (YYYY-MM-DDTHH:mm):",
+      name: "startDate",
+      message: "Start date (YYYY-MM-DD):",
+      validate: (input: string) =>
+        isValidDateString(input) || "Enter a valid date (YYYY-MM-DD)",
+    },
+    {
+      type: "input",
+      name: "startHour",
+      message: "Start time (HH:mm):",
+      validate: (input: string) =>
+        /^\d{2}:\d{2}$/.test(input) || "Enter a valid time (HH:mm)",
     },
   ]);
+
+  const startTime = `${answers.startDate}T${answers.startHour}`;
+
+  const trips = await getTrips();
+  const currentTrip = trips.find((t) => t.id === currentTripId);
+  if (currentTrip && parseISO(startTime) < new Date(currentTrip.startDate)) {
+    console.log(`\nTrip start date is ${new Date(currentTrip.startDate).toISOString().slice(0, 10)}. Activity cannot start before that.`);
+    return;
+  }
 
   await addActivity(
     currentTripId,
     answers.name,
-    answers.cost,
+    parseFloat(answers.cost),
     answers.category,
-    new Date(answers.startTime),
+    new Date(startTime),
   );
   console.log(`\nActivity "${answers.name}" added!`);
 };
