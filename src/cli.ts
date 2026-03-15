@@ -89,6 +89,10 @@ const handleFilterActivities = async () => {
         type: "input",
         name: "date",
         message: 'Enter a date (YYYY-MM-DD) or "back" to return:',
+        validate: (input: string) =>
+          input.toLowerCase() === "back" ||
+          isValidDateString(input) ||
+          "Enter a valid date (YYYY-MM-DD) or \"back\"",
       },
     ]);
 
