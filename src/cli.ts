@@ -10,7 +10,12 @@ import {
 } from "./services/activityService";
 import { getTripTotalCost, findHighCostItem } from "./services/budgetManager";
 import { getDestinationInfo } from "./services/destinationService";
-import { addTrip, deleteTrip, deleteAllTrips, getTrips } from "./services/tripService";
+import {
+  addTrip,
+  deleteTrip,
+  deleteAllTrips,
+  getTrips,
+} from "./services/tripService";
 import {
   isValidDateString,
   isPositiveNumber,
@@ -93,7 +98,7 @@ const handleFilterActivities = async () => {
         validate: (input: string) =>
           input.toLowerCase() === "back" ||
           isValidDateString(input) ||
-          "Enter a valid date (YYYY-MM-DD) or \"back\"",
+          'Enter a valid date (YYYY-MM-DD) or "back"',
       },
     ]);
 
@@ -121,19 +126,6 @@ const handleAddActivity = async () => {
     console.log("\nNo trip selected. Select a trip first!");
     return;
   }
-
-  const { confirm } = await inquirer.prompt<{ confirm: string }>([
-    {
-      type: "list",
-      name: "confirm",
-      message: "Add a new activity?",
-      choices: [
-        { name: "Continue", value: "continue" },
-        { name: "Back to menu", value: "back" },
-      ],
-    },
-  ]);
-  if (confirm === "back") return;
 
   const answers = await inquirer.prompt<{
     name: string;
@@ -183,7 +175,9 @@ const handleAddActivity = async () => {
   const trips = await getTrips();
   const currentTrip = trips.find((t) => t.id === currentTripId);
   if (currentTrip && parseISO(startTime) < new Date(currentTrip.startDate)) {
-    console.log(`\nTrip start date is ${new Date(currentTrip.startDate).toISOString().slice(0, 10)}. Activity cannot start before that.`);
+    console.log(
+      `\nTrip start date is ${new Date(currentTrip.startDate).toISOString().slice(0, 10)}. Activity cannot start before that.`,
+    );
     return;
   }
 
@@ -238,62 +232,44 @@ const handleDeleteActivity = async () => {
 
 // Prompts for trip details and creates a new trip
 const handleCreateTrip = async () => {
-  const { confirm } = await inquirer.prompt<{ confirm: string }>([
-    {
-      type: "list",
-      name: "confirm",
-      message: "Create a new trip?",
-      choices: [
-        { name: "Continue", value: "continue" },
-        { name: "Back to menu", value: "back" },
-      ],
+  const { rawDestination } = await inquirer.prompt<{ rawDestination: string }>({
+    type: "input",
+    name: "rawDestination",
+    message: 'Destination (country) or "cancel" to go back:',
+    validate: async (input: string) => {
+      if (!isNonEmptyString(input)) return "Destination cannot be empty";
+      if (input.toLowerCase() === "cancel") return true;
+      const formatted = input.charAt(0).toUpperCase() + input.slice(1).toLowerCase();
+      try {
+        await getDestinationInfo(formatted);
+        return true;
+      } catch {
+        return "Invalid entry. Please enter a valid country name";
+      }
     },
-  ]);
-  if (confirm === "back") return;
+  });
+  if (rawDestination.toLowerCase() === "cancel") return;
 
-  const answers = await inquirer.prompt<{
-    destination: string;
-    startDate: string;
-  }>([
-    {
-      type: "input",
-      name: "destination",
-      message: "Destination (country):",
-      validate: (input: string) =>
-        isNonEmptyString(input) || "Destination cannot be empty",
-    },
-    {
-      type: "input",
-      name: "startDate",
-      message: "Start date (YYYY-MM-DD):",
-      validate: (input: string) =>
-        isValidDateString(input) || "Enter a valid date (YYYY-MM-DD)",
-    },
-  ]);
+  const { startDate } = await inquirer.prompt<{ startDate: string }>({
+    type: "input",
+    name: "startDate",
+    message: "Start date (YYYY-MM-DD):",
+    validate: (input: string) =>
+      isValidDateString(input) || "Enter a valid date (YYYY-MM-DD)",
+  });
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  if (parseISO(answers.startDate) < today) {
+  if (parseISO(startDate) < today) {
     console.log("\nStart date cannot be in the past.");
     return;
   }
 
   const destination =
-    answers.destination.charAt(0).toUpperCase() + answers.destination.slice(1).toLowerCase();
+    rawDestination.charAt(0).toUpperCase() +
+    rawDestination.slice(1).toLowerCase();
 
-  console.log("\nValidating destination...");
-  try {
-    await getDestinationInfo(destination);
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.log(`\n${message}`);
-    return;
-  }
-
-  const tripId = await addTrip(
-    destination,
-    parseISO(answers.startDate),
-  );
+  const tripId = await addTrip(destination, parseISO(startDate));
   console.log(`\nTrip to "${destination}" created! (${tripId})`);
 };
 
@@ -444,7 +420,8 @@ const handleHighCost = async () => {
       name: "threshold",
       message: "Enter cost threshold ($):",
       validate: (input: string) =>
-        isPositiveNumber(parseFloat(input)) || "Threshold must be a positive number",
+        isPositiveNumber(parseFloat(input)) ||
+        "Threshold must be a positive number",
     },
   ]);
   const items = await findHighCostItem(currentTripId, parseFloat(threshold));

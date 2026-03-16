@@ -8,7 +8,7 @@ export const getDestinationInfo = async (countryName: string) => {
 
   try {
     response = await fetch(
-      `https://restcountries.com/v3.1/name/${countryName}`,
+      `https://restcountries.com/v3.1/name/${countryName}?fullText=true`,
     );
   } catch {
     throw new Error("Network error: could not reach the countries API");
